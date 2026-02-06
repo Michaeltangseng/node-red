@@ -1,0 +1,163 @@
+<script type="text/javascript">
+    RED.nodes.registerType('math-calculator', {
+        category: 'function',
+        color: '#3b82f6',
+        defaults: {
+            name: {value: ""},
+            operation: {value: "add", required: true},
+            operand1: {value: "payload", required: true},
+            operand2: {value: "0", required: true},
+            operand2Type: {value: "num", required: true},
+            resultProperty: {value: "payload", required: true},
+            round: {value: false},
+            precision: {value: "2"}
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "function.svg",
+        label: function() {
+            var opLabels = {
+                "add": "+",
+                "subtract": "-",
+                "multiply": "×",
+                "divide": "÷",
+                "modulo": "%",
+                "power": "^",
+                "sqrt": "√",
+                "abs": "|x|",
+                "floor": "⌊x⌋",
+                "ceil": "⌈x⌉",
+                "round": "≈"
+            };
+            var opLabel = opLabels[this.operation] || this.operation;
+            return this.name || ("Math " + opLabel);
+        },
+        labelStyle: function() {
+            return this.name ? "node_label_italic" : "";
+        },
+        oneditprepare: function() {
+            // 当运算类型改变时，显示/隐藏操作数2输入框
+            $('#node-input-operation').on('change', function() {
+                var operation = $(this).val();
+                var operand2Row = $('#operand2-row');
+                
+                // 对于单操作数运算，隐藏操作数2输入框
+                if (operation === 'sqrt' || operation === 'abs' || 
+                    operation === 'floor' || operation === 'ceil' || operation === 'round') {
+                    operand2Row.hide();
+                } else {
+                    operand2Row.show();
+                }
+            });
+            
+            // 当勾选"四舍五入"时，隐藏精度输入框
+            $('#node-input-round').on('change', function() {
+                if ($(this).is(':checked')) {
+                    $('#precision-row').hide();
+                } else {
+                    $('#precision-row').show();
+                }
+            });
+            
+            // 初始化时检查状态
+            setTimeout(function() {
+                $('#node-input-operation').trigger('change');
+                $('#node-input-round').trigger('change');
+            }, 100);
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="math-calculator">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="editor:common.label.name"></span></label>
+        <input type="text" id="node-input-name" data-i18n="[placeholder]editor:common.label.name">
+    </div>
+    
+    <div class="form-row">
+        <label for="node-input-operation"><i class="fa fa-calculator"></i> 运算类型</label>
+        <select id="node-input-operation" style="width: 70%;">
+            <option value="add">加法 (+)</option>
+            <option value="subtract">减法 (-)</option>
+            <option value="multiply">乘法 (×)</option>
+            <option value="divide">除法 (÷)</option>
+            <option value="modulo">取模 (%)</option>
+            <option value="power">幂运算 (^)</option>
+            <option value="sqrt">平方根 (√)</option>
+            <option value="abs">绝对值 (|x|)</option>
+            <option value="floor">向下取整 (⌊x⌋)</option>
+            <option value="ceil">向上取整 (⌈x⌉)</option>
+            <option value="round">四舍五入 (≈)</option>
+        </select>
+    </div>
+    
+    <div class="form-row">
+        <label for="node-input-operand1"><i class="fa fa-hashtag"></i> 操作数1 (来源)</label>
+        <input type="text" id="node-input-operand1" placeholder="payload" style="width: 70%;">
+        <input type="hidden" id="node-input-operand1-type" value="msg">
+    </div>
+    
+    <div class="form-row" id="operand2-row">
+        <label for="node-input-operand2"><i class="fa fa-hashtag"></i> 操作数2</label>
+        <div style="display: flex; width: 100%;">
+            <select id="node-input-operand2Type" style="width: 30%; margin-right: 5px;">
+                <option value="num">数字</option>
+                <option value="msg">消息属性</option>
+                <option value="flow">流程变量</option>
+                <option value="global">全局变量</option>
+            </select>
+            <input type="text" id="node-input-operand2" placeholder="0" style="width: 70%;">
+        </div>
+    </div>
+    
+    <div class="form-row">
+        <label for="node-input-resultProperty"><i class="fa fa-arrow-right"></i> 结果属性</label>
+        <input type="text" id="node-input-resultProperty" placeholder="payload" style="width: 70%;">
+    </div>
+    
+    <div class="form-row">
+        <label for="node-input-round">
+            <input type="checkbox" id="node-input-round" style="display: inline-block; width: auto; vertical-align: top;">
+            <span style="width: 70%;">四舍五入到整数</span>
+        </label>
+    </div>
+    
+    <div class="form-row" id="precision-row">
+        <label for="node-input-precision"><i class="fa fa-sliders"></i> 小数精度</label>
+        <input type="text" id="node-input-precision" placeholder="2" style="width: 70%;">
+        <span style="margin-left: 5px; color: #999;">(留空则不限制精度)</span>
+    </div>
+</script>
+
+<script type="text/html" data-help-name="math-calculator">
+    <p>数学计算节点，支持多种数学运算。</p>
+    
+    <h3>支持的运算类型：</h3>
+    <ul>
+        <li><b>加法 (+)</b>: 两个数相加</li>
+        <li><b>减法 (-)</b>: 第一个数减去第二个数</li>
+        <li><b>乘法 (×)</b>: 两个数相乘</li>
+        <li><b>除法 (÷)</b>: 第一个数除以第二个数</li>
+        <li><b>取模 (%)</b>: 第一个数对第二个数取模</li>
+        <li><b>幂运算 (^)</b>: 第一个数的第二个数次方</li>
+        <li><b>平方根 (√)</b>: 计算第一个数的平方根（忽略操作数2）</li>
+        <li><b>绝对值 (|x|)</b>: 计算第一个数的绝对值（忽略操作数2）</li>
+        <li><b>向下取整 (⌊x⌋)</b>: 向下取整（忽略操作数2）</li>
+        <li><b>向上取整 (⌈x⌉)</b>: 向上取整（忽略操作数2）</li>
+        <li><b>四舍五入 (≈)</b>: 四舍五入到最近的整数（忽略操作数2）</li>
+    </ul>
+    
+    <h3>配置说明：</h3>
+    <ul>
+        <li><b>操作数1</b>: 从消息中获取的第一个操作数，默认为 <code>payload</code></li>
+        <li><b>操作数2</b>: 可以是固定数字、消息属性、流程变量或全局变量</li>
+        <li><b>结果属性</b>: 计算结果存储的消息属性，默认为 <code>payload</code></li>
+        <li><b>四舍五入</b>: 如果勾选，结果将四舍五入到最近的整数</li>
+        <li><b>小数精度</b>: 指定结果的小数位数（仅在未勾选"四舍五入"时有效）</li>
+    </ul>
+    
+    <h3>示例：</h3>
+    <p>输入消息: <code>{payload: 10}</code></p>
+    <p>配置: 加法, 操作数2 = 5</p>
+    <p>输出消息: <code>{payload: 15}</code></p>
+</script>
