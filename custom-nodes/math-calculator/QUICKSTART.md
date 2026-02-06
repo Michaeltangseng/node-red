@@ -68,6 +68,8 @@
 
 ### 基本测试流程
 
+#### 方法1: 手动创建（传统方式）
+
 1. **创建测试流程**
    - 拖拽一个 `inject` 节点到画布
    - 拖拽 `Math Calculator` 节点到画布
@@ -75,6 +77,100 @@
 
 2. **连接节点**
    - `inject` → `Math Calculator` → `debug`
+
+#### 方法2: 自动创建流程（推荐）
+
+使用提供的脚本自动创建测试流程：
+
+**使用命令行脚本：**
+```bash
+# 在 math-calculator 目录下运行
+node create-test-flow.js
+
+# 或者指定 Node-RED 地址
+node create-test-flow.js --url http://localhost:1880
+
+# 如果需要认证
+node create-test-flow.js --url http://localhost:1880 --user admin --pass password
+```
+
+**使用浏览器控制台（最简单的方式）：**
+1. 打开 Node-RED 编辑器（http://localhost:1880）
+2. 按 F12 打开开发者工具
+3. 在 Console 标签页中运行以下代码：
+
+```javascript
+// 方式1: 直接运行脚本（推荐）
+fetch('/custom-nodes/math-calculator/auto-create-browser.js')
+  .then(r => r.text())
+  .then(eval)
+  .catch(() => {
+    // 如果文件不存在，使用内联代码
+    // 复制 auto-create-browser.js 文件内容到控制台运行
+    console.log('请复制 auto-create-browser.js 文件内容到控制台运行');
+  });
+
+// 方式2: 手动复制代码
+// 打开 auto-create-browser.js 文件，复制全部内容到控制台运行
+```
+
+或者直接复制 `auto-create-browser.js` 文件的全部内容到浏览器控制台运行。
+
+**使用 HTTP API（curl）：**
+```bash
+curl -X POST http://localhost:1880/flows \
+  -H "Content-Type: application/json" \
+  -H "Node-RED-Deployment-Type: full" \
+  -d @- << 'EOF'
+{
+  "flows": [
+    {
+      "id": "test-tab-001",
+      "type": "tab",
+      "label": "Math Calculator Test",
+      "disabled": false
+    },
+    {
+      "id": "inject-001",
+      "type": "inject",
+      "z": "test-tab-001",
+      "name": "Test Input",
+      "props": [{"p": "payload"}],
+      "payload": "10",
+      "payloadType": "num",
+      "x": 240,
+      "y": 180,
+      "wires": [["math-001"]]
+    },
+    {
+      "id": "math-001",
+      "type": "math-calculator",
+      "z": "test-tab-001",
+      "name": "Add 5",
+      "operation": "add",
+      "operand1": "payload",
+      "operand2": "5",
+      "operand2Type": "num",
+      "resultProperty": "payload",
+      "x": 450,
+      "y": 180,
+      "wires": [["debug-001"]]
+    },
+    {
+      "id": "debug-001",
+      "type": "debug",
+      "z": "test-tab-001",
+      "name": "Result",
+      "active": true,
+      "tosidebar": true,
+      "x": 660,
+      "y": 180,
+      "wires": []
+    }
+  ]
+}
+EOF
+```
 
 3. **配置节点**
    - 双击 `inject` 节点，设置 `payload` 为数字，如 `10`

@@ -1,0 +1,61 @@
+<script type="text/javascript">
+    RED.nodes.registerType('auto-create-flow', {
+        category: 'config',
+        color: '#3b82f6',
+        defaults: {
+            name: {value: ""},
+            action: {value: "create", required: true},
+            nodeTypes: {value: "inject,math-calculator,debug", required: true},
+            flowName: {value: "Auto Generated Flow", required: true}
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "cog.svg",
+        label: function() {
+            return this.name || "Auto Create Flow";
+        },
+        labelStyle: function() {
+            return this.name ? "node_label_italic" : "";
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="auto-create-flow">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="editor:common.label.name"></span></label>
+        <input type="text" id="node-input-name" data-i18n="[placeholder]editor:common.label.name">
+    </div>
+    
+    <div class="form-row">
+        <label for="node-input-action"><i class="fa fa-cog"></i> 操作</label>
+        <select id="node-input-action" style="width: 70%;">
+            <option value="create">创建流程</option>
+        </select>
+    </div>
+    
+    <div class="form-row">
+        <label for="node-input-flowName"><i class="fa fa-file"></i> 流程名称</label>
+        <input type="text" id="node-input-flowName" placeholder="Auto Generated Flow" style="width: 70%;">
+    </div>
+    
+    <div class="form-row">
+        <label for="node-input-nodeTypes"><i class="fa fa-sitemap"></i> 节点类型 (逗号分隔)</label>
+        <input type="text" id="node-input-nodeTypes" placeholder="inject,math-calculator,debug" style="width: 70%;">
+        <span style="margin-left: 5px; color: #999;">例如: inject,math-calculator,debug</span>
+    </div>
+</script>
+
+<script type="text/html" data-help-name="auto-create-flow">
+    <p>自动创建流程节点 - 可以自动创建并连接指定的节点。</p>
+    
+    <h3>使用方法：</h3>
+    <ol>
+        <li>配置要创建的节点类型（用逗号分隔）</li>
+        <li>设置流程名称</li>
+        <li>触发节点，将自动创建流程</li>
+    </ol>
+    
+    <h3>示例：</h3>
+    <p>节点类型: <code>inject,math-calculator,debug</code></p>
+    <p>这将创建一个包含 inject → math-calculator → debug 的流程。</p>
+</script>
