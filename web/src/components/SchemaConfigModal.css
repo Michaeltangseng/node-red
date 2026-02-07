@@ -1,0 +1,130 @@
+.schema-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.schema-modal {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  width: 90vw;
+  max-width: 720px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.schema-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.schema-modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.schema-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #666;
+  padding: 0 0.25rem;
+}
+
+.schema-modal-close:hover {
+  color: #333;
+}
+
+.schema-modal-body {
+  flex: 1;
+  min-height: 280px;
+  overflow: hidden;
+}
+
+.schema-json-editor {
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  padding: 1rem;
+  font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  border: none;
+  resize: none;
+  outline: none;
+  background: #f8f9fa;
+  color: #1a1a1a;
+  box-sizing: border-box;
+}
+
+.schema-modal-footer {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.schema-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.schema-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+
+.schema-btn:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.schema-btn-apply {
+  background: #4a90e2;
+  color: #fff;
+  border-color: #4a90e2;
+}
+
+.schema-btn-apply:hover:not(:disabled) {
+  background: #357abd;
+  border-color: #357abd;
+}
+
+.schema-btn-apply:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.schema-btn-export,
+.schema-btn-import {
+  background: #fff;
+  color: #333;
+}
+
+.schema-apply-message {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.schema-apply-message.success {
+  color: #155724;
+}
+
+.schema-apply-message.error {
+  color: #721c24;
+}

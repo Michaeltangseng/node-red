@@ -1,19 +1,41 @@
 import { useState } from 'react'
 import NodeRedEditor from './components/NodeRedEditor'
+import SchemaConfigModal from './components/SchemaConfigModal'
 import './App.css'
 
 function App() {
   const [nodeRedUrl] = useState('http://localhost:1880')
+  const [schemaModalOpen, setSchemaModalOpen] = useState(false)
+
+  const refreshEditor = () => {
+    const iframe = document.querySelector('iframe')
+    if (iframe) iframe.src = iframe.src
+  }
 
   return (
     <div className="app">
       <header className="app-header">
         <h1>Node-RED 工作流编辑器</h1>
-        <CreateFlowButton nodeRedUrl={nodeRedUrl} />
+        <div className="create-flow-container">
+          <button
+            type="button"
+            className="create-flow-button create-flow-button-secondary"
+            onClick={() => setSchemaModalOpen(true)}
+          >
+            schema config
+          </button>
+          <CreateFlowButton nodeRedUrl={nodeRedUrl} />
+        </div>
       </header>
       <main className="app-main">
         <NodeRedEditor url={nodeRedUrl} />
       </main>
+      <SchemaConfigModal
+        open={schemaModalOpen}
+        onClose={() => setSchemaModalOpen(false)}
+        nodeRedUrl={nodeRedUrl}
+        onApplySuccess={refreshEditor}
+      />
     </div>
   )
 }
@@ -186,9 +208,10 @@ function CreateFlowButton({ nodeRedUrl }) {
   }
 
   return (
-    <div className="create-flow-container">
-      <button 
-        className="create-flow-button" 
+    <>
+      <button
+        type="button"
+        className="create-flow-button"
         onClick={handleCreateFlow}
         disabled={loading}
       >
@@ -199,7 +222,7 @@ function CreateFlowButton({ nodeRedUrl }) {
           {message}
         </div>
       )}
-    </div>
+    </>
   )
 }
 

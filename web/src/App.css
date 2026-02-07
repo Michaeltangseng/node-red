@@ -47,6 +47,14 @@
   cursor: not-allowed;
 }
 
+.create-flow-button-secondary {
+  background-color: #5a6268;
+}
+
+.create-flow-button-secondary:hover:not(:disabled) {
+  background-color: #495057;
+}
+
 .message {
   padding: 0.5rem 1rem;
   border-radius: 4px;
