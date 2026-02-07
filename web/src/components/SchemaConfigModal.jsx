@@ -107,52 +107,46 @@ const DEFAULT_SCHEMA_JSON = [
   }
 ]
 
+const FLOWS_HEADERS = {
+  'Content-Type': 'application/json; charset=utf-8',
+  'Node-RED-API-Version': 'v2'
+}
+
 function SchemaConfigModal({ open, onClose, nodeRedUrl, apiBaseUrl, onApplySuccess }) {
   const [jsonText, setJsonText] = useState(() => JSON.stringify(DEFAULT_SCHEMA_JSON, null, 2))
-  const [applyMessage, setApplyMessage] = useState('')
+  const [message, setMessage] = useState('')
   const [applyLoading, setApplyLoading] = useState(false)
   const [syncLoading, setSyncLoading] = useState(false)
   const fileInputRef = useRef(null)
 
-  // API 基地址：空字符串时用相对路径 /flows，走 Vite 代理，避免跨域导致空 []
-  const apiBase = typeof apiBaseUrl === 'string' ? apiBaseUrl.replace(/\/$/, '') : (nodeRedUrl || '').replace(/\/$/, '')
+  const flowsUrl = (typeof apiBaseUrl === 'string' ? apiBaseUrl : nodeRedUrl || '').replace(/\/$/, '') || ''
+  const flowsEndpoint = flowsUrl ? `${flowsUrl}/flows` : '/flows'
 
   const getCurrentFlows = useCallback(async () => {
     try {
-      const url = apiBase ? `${apiBase}/flows` : '/flows'
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Node-RED-API-Version': 'v2'
-        }
-      })
-      if (response.ok) {
-        const data = await response.json()
-        // v2 返回 { flows, rev }；v1 或旧版可能直接返回数组
-        const flows = Array.isArray(data) ? data : (data?.flows ?? [])
-        const rev = Array.isArray(data) ? null : (data?.rev ?? null)
-        return { flows, rev }
-      }
+      const res = await fetch(flowsEndpoint, { method: 'GET', headers: FLOWS_HEADERS })
+      if (!res.ok) return { flows: [], rev: null }
+      const data = await res.json()
+      const flows = Array.isArray(data) ? data : (data?.flows ?? [])
+      const rev = Array.isArray(data) ? null : (data?.rev ?? null)
+      return { flows, rev }
     } catch (e) {
       console.error('获取流程失败:', e)
+      return { flows: [], rev: null }
     }
-    return { flows: [], rev: null }
-  }, [apiBase])
+  }, [flowsEndpoint])
 
-  // 打开弹窗时从画布同步：拉取当前流程并填入编辑器
   useEffect(() => {
     if (!open) return
     let cancelled = false
     setSyncLoading(true)
-    setApplyMessage('')
+    setMessage('')
     getCurrentFlows()
       .then(({ flows }) => {
-        if (cancelled) return
-        setJsonText(JSON.stringify(flows, null, 2))
+        if (!cancelled) setJsonText(JSON.stringify(flows, null, 2))
       })
       .catch(() => {
-        if (!cancelled) setApplyMessage('❌ 同步画布失败，请检查 Node-RED 是否运行')
+        if (!cancelled) setMessage('❌ 同步画布失败，请检查 Node-RED 是否运行')
       })
       .finally(() => {
         if (!cancelled) setSyncLoading(false)
@@ -160,62 +154,39 @@ function SchemaConfigModal({ open, onClose, nodeRedUrl, apiBaseUrl, onApplySucce
     return () => { cancelled = true }
   }, [open, getCurrentFlows])
 
-  // Apply：用编辑器内容完整替换画布（与画布一致）
   const handleApply = async () => {
-    setApplyMessage('')
+    setMessage('')
     setApplyLoading(true)
     try {
-      let flows
-      try {
-        flows = JSON.parse(jsonText)
-      } catch (e) {
-        setApplyMessage('❌ JSON 格式错误: ' + e.message)
-        return
-      }
+      const flows = JSON.parse(jsonText)
       if (!Array.isArray(flows)) {
-        setApplyMessage('❌ Schema 必须是节点数组 (Array)')
+        setMessage('❌ Schema 必须是节点数组 (Array)')
         return
       }
-      const { rev: currentRev } = await getCurrentFlows()
-      const data = { flows }
-      if (currentRev != null) data.rev = currentRev
-
-      const url = apiBase ? `${apiBase}/flows` : '/flows'
-      const response = await fetch(url, {
+      const { rev } = await getCurrentFlows()
+      const body = { flows, ...(rev != null && { rev }) }
+      const res = await fetch(flowsEndpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Node-RED-Deployment-Type': 'full',
-          'Node-RED-API-Version': 'v2'
-        },
-        body: JSON.stringify(data)
+        headers: { ...FLOWS_HEADERS, 'Node-RED-Deployment-Type': 'full' },
+        body: JSON.stringify(body)
       })
-
-      if (!response.ok) {
-        const errText = await response.text()
-        throw new Error(`${response.status} - ${errText}`)
-      }
-      setApplyMessage('✅ 已应用并部署成功')
+      if (!res.ok) throw new Error(`${res.status} - ${await res.text()}`)
       onApplySuccess?.()
+      onClose()
     } catch (err) {
-      setApplyMessage('❌ 应用失败: ' + (err.message || err))
+      const msg = err instanceof SyntaxError ? '❌ JSON 格式错误: ' + err.message : '❌ 应用失败: ' + (err.message || err)
+      setMessage(msg)
     } finally {
       setApplyLoading(false)
     }
   }
 
-  const handleExportFile = () => {
-    const blob = new Blob([jsonText], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
+  const handleExport = () => {
     const a = document.createElement('a')
-    a.href = url
+    a.href = URL.createObjectURL(new Blob([jsonText], { type: 'application/json' }))
     a.download = 'node-red-flow-schema.json'
     a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const handleImportFile = () => {
-    fileInputRef.current?.click()
+    URL.revokeObjectURL(a.href)
   }
 
   const onFileChange = (e) => {
@@ -224,12 +195,11 @@ function SchemaConfigModal({ open, onClose, nodeRedUrl, apiBaseUrl, onApplySucce
     const reader = new FileReader()
     reader.onload = () => {
       try {
-        const text = reader.result
-        JSON.parse(text) // validate
-        setJsonText(typeof text === 'string' ? text : JSON.stringify(JSON.parse(text), null, 2))
-        setApplyMessage('')
+        const text = String(reader.result)
+        setJsonText(JSON.stringify(JSON.parse(text), null, 2))
+        setMessage('')
       } catch (err) {
-        setApplyMessage('❌ 文件不是有效 JSON: ' + err.message)
+        setMessage('❌ 文件不是有效 JSON: ' + err.message)
       }
       e.target.value = ''
     }
@@ -246,11 +216,7 @@ function SchemaConfigModal({ open, onClose, nodeRedUrl, apiBaseUrl, onApplySucce
           <button type="button" className="schema-modal-close" onClick={onClose} aria-label="关闭">×</button>
         </div>
         <div className="schema-modal-body">
-          {syncLoading && (
-            <div className="schema-sync-loading">
-              正在从画布同步…
-            </div>
-          )}
+          {syncLoading && <div className="schema-sync-loading">正在从画布同步…</div>}
           <textarea
             className="schema-json-editor"
             value={jsonText}
@@ -265,24 +231,12 @@ function SchemaConfigModal({ open, onClose, nodeRedUrl, apiBaseUrl, onApplySucce
             <button type="button" className="schema-btn schema-btn-apply" onClick={handleApply} disabled={applyLoading}>
               {applyLoading ? '应用中...' : 'Apply'}
             </button>
-            <button type="button" className="schema-btn schema-btn-export" onClick={handleExportFile}>
-              Export file
-            </button>
-            <button type="button" className="schema-btn schema-btn-import" onClick={handleImportFile}>
-              Import file
-            </button>
+            <button type="button" className="schema-btn" onClick={handleExport}>Export file</button>
+            <button type="button" className="schema-btn" onClick={() => fileInputRef.current?.click()}>Import file</button>
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".json,application/json"
-            onChange={onFileChange}
-            style={{ display: 'none' }}
-          />
-          {applyMessage && (
-            <div className={`schema-apply-message ${applyMessage.startsWith('✅') ? 'success' : 'error'}`}>
-              {applyMessage}
-            </div>
+          <input ref={fileInputRef} type="file" accept=".json,application/json" onChange={onFileChange} style={{ display: 'none' }} />
+          {message && (
+            <div className={`schema-apply-message ${message.startsWith('✅') ? 'success' : 'error'}`}>{message}</div>
           )}
         </div>
       </div>
