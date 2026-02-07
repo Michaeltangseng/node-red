@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import './SchemaConfigModal.css'
 
 // 复杂场景: inject → function → switch → (calculator → debug | debug)，有向无环
@@ -107,49 +107,81 @@ const DEFAULT_SCHEMA_JSON = [
   }
 ]
 
-function SchemaConfigModal({ open, onClose, nodeRedUrl, onApplySuccess }) {
+function SchemaConfigModal({ open, onClose, nodeRedUrl, apiBaseUrl, onApplySuccess }) {
   const [jsonText, setJsonText] = useState(() => JSON.stringify(DEFAULT_SCHEMA_JSON, null, 2))
   const [applyMessage, setApplyMessage] = useState('')
   const [applyLoading, setApplyLoading] = useState(false)
+  const [syncLoading, setSyncLoading] = useState(false)
   const fileInputRef = useRef(null)
+
+  // API 基地址：空字符串时用相对路径 /flows，走 Vite 代理，避免跨域导致空 []
+  const apiBase = typeof apiBaseUrl === 'string' ? apiBaseUrl.replace(/\/$/, '') : (nodeRedUrl || '').replace(/\/$/, '')
 
   const getCurrentFlows = useCallback(async () => {
     try {
-      const response = await fetch(`${nodeRedUrl}/flows`, {
+      const url = apiBase ? `${apiBase}/flows` : '/flows'
+      const response = await fetch(url, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+          'Content-Type': 'application/json',
+          'Node-RED-API-Version': 'v2'
+        }
       })
       if (response.ok) {
         const data = await response.json()
-        return { flows: data.flows || [], rev: data.rev ?? null }
+        // v2 返回 { flows, rev }；v1 或旧版可能直接返回数组
+        const flows = Array.isArray(data) ? data : (data?.flows ?? [])
+        const rev = Array.isArray(data) ? null : (data?.rev ?? null)
+        return { flows, rev }
       }
     } catch (e) {
       console.error('获取流程失败:', e)
     }
     return { flows: [], rev: null }
-  }, [nodeRedUrl])
+  }, [apiBase])
 
+  // 打开弹窗时从画布同步：拉取当前流程并填入编辑器
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    setSyncLoading(true)
+    setApplyMessage('')
+    getCurrentFlows()
+      .then(({ flows }) => {
+        if (cancelled) return
+        setJsonText(JSON.stringify(flows, null, 2))
+      })
+      .catch(() => {
+        if (!cancelled) setApplyMessage('❌ 同步画布失败，请检查 Node-RED 是否运行')
+      })
+      .finally(() => {
+        if (!cancelled) setSyncLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [open, getCurrentFlows])
+
+  // Apply：用编辑器内容完整替换画布（与画布一致）
   const handleApply = async () => {
     setApplyMessage('')
     setApplyLoading(true)
     try {
-      let nodes
+      let flows
       try {
-        nodes = JSON.parse(jsonText)
+        flows = JSON.parse(jsonText)
       } catch (e) {
         setApplyMessage('❌ JSON 格式错误: ' + e.message)
         return
       }
-      if (!Array.isArray(nodes)) {
+      if (!Array.isArray(flows)) {
         setApplyMessage('❌ Schema 必须是节点数组 (Array)')
         return
       }
-      const { flows: existingFlows, rev: currentRev } = await getCurrentFlows()
-      const allFlows = [...existingFlows, ...nodes]
-      const data = { flows: allFlows }
+      const { rev: currentRev } = await getCurrentFlows()
+      const data = { flows }
       if (currentRev != null) data.rev = currentRev
 
-      const response = await fetch(`${nodeRedUrl}/flows`, {
+      const url = apiBase ? `${apiBase}/flows` : '/flows'
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json; charset=utf-8',
@@ -214,12 +246,18 @@ function SchemaConfigModal({ open, onClose, nodeRedUrl, onApplySuccess }) {
           <button type="button" className="schema-modal-close" onClick={onClose} aria-label="关闭">×</button>
         </div>
         <div className="schema-modal-body">
+          {syncLoading && (
+            <div className="schema-sync-loading">
+              正在从画布同步…
+            </div>
+          )}
           <textarea
             className="schema-json-editor"
             value={jsonText}
             onChange={e => setJsonText(e.target.value)}
             spellCheck={false}
             placeholder='[ { "id": "...", "type": "tab", ... }, ... ]'
+            readOnly={syncLoading}
           />
         </div>
         <div className="schema-modal-footer">

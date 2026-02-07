@@ -34,6 +34,7 @@ function App() {
         open={schemaModalOpen}
         onClose={() => setSchemaModalOpen(false)}
         nodeRedUrl={nodeRedUrl}
+        apiBaseUrl=""
         onApplySuccess={refreshEditor}
       />
     </div>
