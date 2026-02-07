@@ -1,0 +1,74 @@
+[
+  {
+    "id": "tab.1",
+    "type": "tab",
+    "label": "Math Calculator Test",
+    "disabled": false,
+    "info": "自动生成的数学计算测试流程"
+  },
+  {
+    "id": "inject.1",
+    "type": "inject",
+    "z": "tab.1",
+    "name": "Test Input",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "10",
+    "payloadType": "num",
+    "x": 240,
+    "y": 180,
+    "wires": [
+      [
+        "math.1"
+      ]
+    ]
+  },
+  {
+    "id": "math.1",
+    "type": "math-calculator",
+    "z": "tab.1",
+    "name": "Add 5",
+    "operation": "add",
+    "operand1": "payload",
+    "operand2": "5",
+    "operand2Type": "num",
+    "resultProperty": "payload",
+    "round": false,
+    "precision": "2",
+    "x": 450,
+    "y": 180,
+    "wires": [
+      [
+        "debug.1"
+      ]
+    ]
+  },
+  {
+    "id": "debug.1",
+    "type": "debug",
+    "z": "tab.1",
+    "name": "Result",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "false",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 660,
+    "y": 180,
+    "wires": []
+  }
+]

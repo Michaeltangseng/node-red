@@ -1,19 +1,20 @@
 import { useState, useRef, useCallback } from 'react'
 import './SchemaConfigModal.css'
 
+// 复杂场景: inject → function → switch → (calculator → debug | debug)，有向无环
 const DEFAULT_SCHEMA_JSON = [
   {
     id: "tab.1",
     type: "tab",
-    label: "Math Calculator Test",
+    label: "DAG: Inject + Function + Switch + Calculator + Debug",
     disabled: false,
-    info: "自动生成的数学计算测试流程"
+    info: "有向无环: inject → function → switch → calculator/debug"
   },
   {
     id: "inject.1",
     type: "inject",
     z: "tab.1",
-    name: "Test Input",
+    name: "Trigger",
     props: [{ p: "payload" }, { p: "topic", vt: "str" }],
     repeat: "",
     crontab: "",
@@ -22,9 +23,39 @@ const DEFAULT_SCHEMA_JSON = [
     topic: "",
     payload: "10",
     payloadType: "num",
-    x: 240,
-    y: 180,
-    wires: [["math.1"]]
+    x: 120,
+    y: 200,
+    wires: [["function.1"]]
+  },
+  {
+    id: "function.1",
+    type: "function",
+    z: "tab.1",
+    name: "Prepare",
+    func: "msg.payload = typeof msg.payload === 'number' ? msg.payload : Number(msg.payload) || 0;\nreturn msg;",
+    outputs: 1,
+    noerr: 0,
+    x: 300,
+    y: 200,
+    wires: [["switch.1"]]
+  },
+  {
+    id: "switch.1",
+    type: "switch",
+    z: "tab.1",
+    name: "Is number?",
+    property: "payload",
+    propertyType: "msg",
+    rules: [
+      { t: "istype", v: "number", vt: "number" },
+      { t: "else" }
+    ],
+    checkall: "false",
+    repair: false,
+    outputs: 2,
+    x: 480,
+    y: 200,
+    wires: [["math.1"], ["debug.2"]]
   },
   {
     id: "math.1",
@@ -38,15 +69,15 @@ const DEFAULT_SCHEMA_JSON = [
     resultProperty: "payload",
     round: false,
     precision: "2",
-    x: 450,
-    y: 180,
+    x: 680,
+    y: 160,
     wires: [["debug.1"]]
   },
   {
     id: "debug.1",
     type: "debug",
     z: "tab.1",
-    name: "Result",
+    name: "Calc result",
     active: true,
     tosidebar: true,
     console: false,
@@ -54,8 +85,24 @@ const DEFAULT_SCHEMA_JSON = [
     complete: "false",
     statusVal: "",
     statusType: "auto",
-    x: 660,
-    y: 180,
+    x: 880,
+    y: 160,
+    wires: []
+  },
+  {
+    id: "debug.2",
+    type: "debug",
+    z: "tab.1",
+    name: "Not number",
+    active: true,
+    tosidebar: true,
+    console: false,
+    tostatus: false,
+    complete: "false",
+    statusVal: "",
+    statusType: "auto",
+    x: 700,
+    y: 240,
     wires: []
   }
 ]
