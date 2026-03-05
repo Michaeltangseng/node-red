@@ -1,6 +1,6 @@
 # Node-RED React 前端包装器
 
-这是 React 前端应用，用于包裹 Node-RED 编辑器。
+这是 React 前端应用，用于包裹 Node-RED 编辑器，并支持在主平台中通过 iframe 集成。
 
 ## 功能
 
@@ -34,7 +34,11 @@ cd web
 npm run dev
 ```
 
-前端将在 `http://localhost:3000` 启动
+前端默认在 `http://localhost:3000` 启动，如需避免与主平台端口冲突，可以使用：
+
+```bash
+npm run dev --port 3001
+```
 
 ### 4. 使用
 
@@ -86,6 +90,17 @@ const [nodeRedUrl] = useState('http://localhost:1880')
 ### 修改代理配置
 
 如果需要修改 API 代理，编辑 `vite.config.js` 中的 `proxy` 配置。
+
+### 在主平台中集成（iframe）
+
+- 主平台通过 `AISystemManager` 组件中的 `Flow Orchestrator` 页签，以 iframe 方式嵌入本前端。
+- 主平台使用环境变量 `VITE_ORCHESTRATOR_URL` 指定本前端地址，例如：
+
+```bash
+VITE_ORCHESTRATOR_URL=http://localhost:3001
+```
+
+详细步骤可参考主平台 `docs/crchestrator_integration.md`。
 
 ## 开发
 

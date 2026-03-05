@@ -23,6 +23,7 @@ npm install
 
 ```bash
 npm start
+npm run build // 必须先build
 ```
 
 Node-RED 将在 `http://localhost:1880` 启动
