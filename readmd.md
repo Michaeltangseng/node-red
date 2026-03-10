@@ -37,7 +37,7 @@ npm run dev
 前端默认在 `http://localhost:3000` 启动，如需避免与主平台端口冲突，可以使用：
 
 ```bash
-npm run dev --port 3001
+npm run dev --port 5173
 ```
 
 ### 4. 使用

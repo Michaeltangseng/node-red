@@ -1,0 +1,68 @@
+<script type="text/javascript">
+    RED.nodes.registerType('blank-rect', {
+        category: 'function',
+        color: '#e5e7eb',
+        defaults: {
+            name: { value: "" },
+            bgColor: { value: "#FFEFD5", required: true },
+            width: { value: 240 },
+            height: { value: 120 },
+            note: { value: "" }
+        },
+        inputs: 0,
+        outputs: 0,
+        icon: "white-globe.svg",
+        label: function () {
+            return this.name || "Blank Rect";
+        },
+        labelStyle: function () {
+            return this.name ? "node_label_italic" : "";
+        },
+        oneditprepare: function () {
+            // nothing special; fields are bound automatically
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="blank-rect">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> 名称</label>
+        <input type="text" id="node-input-name" placeholder="可选：矩形说明">
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-bgColor"><i class="fa fa-paint-brush"></i> 背景颜色</label>
+        <input type="color" id="node-input-bgColor" style="width: 80px; padding: 0; border: none;">
+        <span style="margin-left: 8px; color: #888;">用于表示该矩形区域的背景色</span>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-width"><i class="fa fa-arrows-h"></i> 宽度</label>
+        <input type="number" id="node-input-width" style="width: 100px;" min="40" step="10">
+        <span style="margin-left: 8px; color: #888;">仅作为布局元数据</span>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-height"><i class="fa fa-arrows-v"></i> 高度</label>
+        <input type="number" id="node-input-height" style="width: 100px;" min="40" step="10">
+        <span style="margin-left: 8px; color: #888;">仅作为布局元数据</span>
+    </div>
+
+    <div class="form-row">
+        <label for="node-input-note"><i class="fa fa-sticky-note"></i> 备注</label>
+        <input type="text" id="node-input-note" style="width: 70%;" placeholder="可选：该区域用途说明">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="blank-rect">
+    <p>矩形空白框节点，用于在画布上标记一个区域，附带背景颜色和尺寸元数据。</p>
+    <p>它不会对消息做任何处理，只是作为布局/分组的视觉元素。</p>
+    <h3>属性</h3>
+    <ul>
+        <li><b>背景颜色</b>：选择一个颜色，用于表示该矩形区域。</li>
+        <li><b>宽度 / 高度</b>：矩形的预期尺寸，存储在 flow JSON 中，可供外部工具使用。</li>
+        <li><b>备注</b>：对该区域用途的简单说明。</li>
+    </ul>
+    <p>注意：Node-RED 本身的节点块背景色主要由节点类型的 <code>color</code> 属性决定，单个实例的背景色不能完全一一对应到编辑器中的渲染颜色，但 <code>bgColor</code> 会保存在节点配置里，可被外部编排器或可视化工具使用。</p>
+</script>
+

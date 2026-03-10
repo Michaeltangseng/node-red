@@ -1,0 +1,21 @@
+{
+  "name": "node-red-contrib-blank-rect",
+  "version": "1.0.0",
+  "description": "A Node-RED node that renders a rectangular blank box with configurable background color.",
+  "main": "blank-rect.js",
+  "keywords": [
+    "node-red",
+    "ui",
+    "layout",
+    "blank",
+    "rect"
+  ],
+  "node-red": {
+    "nodes": {
+      "blank-rect": "blank-rect.js"
+    }
+  },
+  "author": "",
+  "license": "Apache-2.0"
+}
+
